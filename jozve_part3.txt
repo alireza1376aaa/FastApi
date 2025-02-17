@@ -1,0 +1,159 @@
+# 🚀 جزوه کامل آموزش **FastAPI** | راهنمای جامع 🎯
+
+## **1️⃣ معرفی FastAPI**
+FastAPI یک فریم‌ورک مدرن، سریع و آسان برای ساخت APIهای وب است که بر پایه **Python 3.7+** توسعه داده شده و از **Type Hints** و **Pydantic** برای اعتبارسنجی داده‌ها استفاده می‌کند.
+
+### **✅ ویژگی‌های FastAPI:**
+- **سریع و بهینه** 🚀 (حتی سریع‌تر از Flask و Django در برخی موارد)
+- **استفاده از تایپ‌هینت‌های پایتون** 📝
+- **مستندات خودکار OpenAPI** 📜 (دسترسی در مسیر `/docs`)
+- **اعتبارسنجی داده‌ها با Pydantic** ✅
+- **پشتیبانی از WebSockets، GraphQL، Background Tasks و ...**
+
+---
+
+## **2️⃣ ایجاد اولین پروژه در FastAPI**
+### **📌 نصب FastAPI و اجرا با Uvicorn**
+```bash
+pip install fastapi uvicorn
+```
+
+### **📌 ایجاد اولین API در FastAPI**
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, FastAPI!"}
+```
+
+### **📌 اجرای سرور:**
+```bash
+uvicorn main:app --reload
+```
+✅ **اکنون API در `http://127.0.0.1:8000` در دسترس است.**
+✅ **مستندات خودکار در `http://127.0.0.1:8000/docs` قابل مشاهده است.**
+
+---
+
+## **3️⃣ دریافت داده با Query Parameters و Path Parameters**
+
+### **📌 دریافت داده با Query Parameters**
+```python
+@app.get("/items/")
+def read_item(q: str = "default_value"):
+    return {"query": q}
+```
+🔹 درخواست نمونه: `/items/?q=FastAPI`
+
+### **📌 دریافت داده با Path Parameters**
+```python
+@app.get("/items/{item_id}")
+def get_item(item_id: int):
+    return {"item_id": item_id}
+```
+🔹 درخواست نمونه: `/items/10`
+
+---
+
+## **4️⃣ ارسال داده با `Body` و `Form`**
+
+### **📌 دریافت داده به صورت JSON در `Body`**
+```python
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    price: float
+    description: str | None = None
+
+@app.post("/items/")
+def create_item(item: Item):
+    return {"item_name": item.name, "price": item.price}
+```
+✅ درخواست باید **JSON** باشد.
+
+### **📌 دریافت داده از فرم HTML با `Form()`**
+```python
+from fastapi import Form
+
+@app.post("/login/")
+def login(username: str = Form(), password: str = Form()):
+    return {"username": username}
+```
+✅ درخواست باید **`application/x-www-form-urlencoded`** باشد.
+
+---
+
+## **5️⃣ مدیریت فایل‌های آپلودی**
+
+### **📌 آپلود یک فایل با `UploadFile`**
+```python
+from fastapi import File, UploadFile
+
+@app.post("/upload/")
+def upload_file(file: UploadFile):
+    return {"filename": file.filename}
+```
+✅ فایل باید با **`multipart/form-data`** ارسال شود.
+
+### **📌 آپلود چندین فایل هم‌زمان**
+```python
+from typing import List
+
+@app.post("/upload-multiple/")
+def upload_files(files: List[UploadFile]):
+    return {"filenames": [file.filename for file in files]}
+```
+
+✅ مناسب برای فرم‌هایی که چندین فایل ارسال می‌کنند.
+
+---
+
+## **6️⃣ مدیریت خطاها (`Handling Errors`)**
+
+### **📌 ارسال خطای `404 Not Found`**
+```python
+from fastapi import HTTPException
+
+@app.get("/items/{item_id}")
+def get_item(item_id: str):
+    if item_id != "foo":
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"item_id": item_id}
+```
+✅ **در صورت عدم وجود آیتم، پیام خطا نمایش داده می‌شود.**
+
+### **📌 سفارشی‌سازی خطاها با `Exception Handler`**
+```python
+from fastapi.responses import JSONResponse
+
+class CustomException(Exception):
+    def __init__(self, name: str):
+        self.name = name
+
+@app.exception_handler(CustomException)
+def handle_custom_exception(request, exc: CustomException):
+    return JSONResponse(status_code=418, content={"message": f"Oops! {exc.name} caused an error."})
+
+@app.get("/cause-error/{name}")
+def cause_error(name: str):
+    if name == "error":
+        raise CustomException(name=name)
+    return {"name": name}
+```
+✅ **در مسیر `/cause-error/error` پیام سفارشی نمایش داده می‌شود.**
+
+---
+
+## **🎯 جمع‌بندی**
+✅ **FastAPI** فریم‌ورکی سریع، ساده و امن برای توسعه API است.  
+✅ امکان دریافت داده‌ها از **Body، Form و File** به‌صورت مجزا یا ترکیبی وجود دارد.  
+✅ **مدیریت خطاها** با `HTTPException` و `Exception Handlers` بسیار ساده است.  
+✅ **مستندات خودکار (`/docs`)** کار توسعه را راحت‌تر می‌کند.  
+
+🚀 **حالا شما آماده‌ی ساخت APIهای حرفه‌ای با FastAPI هستید!**  
+هر سوالی داشتی، بپرس! 😍🔥
+

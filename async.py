@@ -14,3 +14,8 @@ class Item(BaseModel):
     
 item = Item(name="Laptop", price=1500.0, description="Powerful laptop", tax=100.0)
 print(item.dict())
+
+
+
+def x (ithem :int|str):
+    pass
