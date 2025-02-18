@@ -1,0 +1,137 @@
+**📚 جزوه FastAPI - خلاصه مباحث مهم**
+
+---
+
+## 🚀 ۱. Dependencies with `yield` (مدیریت منابع با `yield`)
+
+### 📌 چرا `yield` استفاده می‌کنیم؟
+- برای **مدیریت منابعی که نیاز به بستن یا پاک‌سازی دارند** مثل:
+  - **اتصال به پایگاه داده**
+  - **خواندن و بستن فایل‌ها**
+  - **ثبت لاگ و مدیریت منابع خارجی**
+
+### 📌 ساختار کلی `yield` در وابستگی‌ها
+```python
+async def get_resource():
+    resource = Resource()  # ایجاد منبع
+    try:
+        yield resource  # ارائه منبع به مسیر API
+    finally:
+        resource.cleanup()  # پاک‌سازی منبع بعد از پایان کار
+```
+
+### 📌 مثال: اتصال و بستن دیتابیس
+```python
+class DBSession:
+    def __init__(self):
+        print("✅ اتصال به دیتابیس باز شد")
+    
+    def close(self):
+        print("🛑 اتصال به دیتابیس بسته شد")
+
+async def get_db():
+    db = DBSession()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+✅ **مزیت:** حتی اگر خطایی رخ دهد، `finally` اجرا شده و منابع آزاد می‌شوند.
+
+---
+
+## 🔵 ۲. `Global Dependencies` (وابستگی‌های سراسری)
+✅ **افزودن وابستگی به کل برنامه بدون نیاز به تکرار `Depends()` در هر مسیر.**
+
+### 📌 ساختار کلی
+```python
+app = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])
+```
+
+### 📌 مثال: احراز هویت در کل برنامه
+```python
+from fastapi import FastAPI, Depends, Header, HTTPException
+
+async def verify_token(x_token: str = Header()):
+    if x_token != "super-secret-token":
+        raise HTTPException(status_code=400, detail="Invalid Token")
+
+app = FastAPI(dependencies=[Depends(verify_token)])
+
+@app.get("/items/")
+async def read_items():
+    return [{"item": "Portal Gun"}, {"item": "Plumbus"}]
+```
+✅ **تمام مسیرها نیاز به `x-token` دارند.**
+
+---
+
+## 🟡 ۳. `Dependencies in Path Operation Decorators`
+✅ **وقتی مقدار بازگشتی وابستگی نیازی نیست ولی باید اجرا شود.**
+
+### 📌 مثال: بررسی `Header` در مسیر خاص
+```python
+@app.get("/secure-items/", dependencies=[Depends(verify_token)])
+async def secure_items():
+    return [{"item": "Secret File"}]
+```
+✅ **اجرای `verify_token` بدون نیاز به مقدار بازگشتی.**
+
+---
+
+## 🔴 ۴. `Sub-dependencies` (وابستگی‌های تو در تو)
+✅ **یک وابستگی که خودش به وابستگی‌های دیگر نیاز دارد.**
+
+### 📌 مثال: چندین سطح وابستگی
+```python
+async def dependency_a():
+    print("✅ Dependency A")
+    yield "A"
+    print("🛑 Closing A")
+
+async def dependency_b(dep_a: str = Depends(dependency_a)):
+    print("✅ Dependency B", dep_a)
+    yield "B"
+    print("🛑 Closing B")
+
+async def dependency_c(dep_b: str = Depends(dependency_b)):
+    print("✅ Dependency C", dep_b)
+    yield "C"
+    print("🛑 Closing C")
+
+@app.get("/nested-deps/")
+async def nested(dependency: str = Depends(dependency_c)):
+    return {"dependency": dependency}
+```
+✅ **FastAPI تضمین می‌کند که وابستگی‌ها به ترتیب مدیریت شوند.**
+
+---
+
+## 🟢 ۵. `Classes as Dependencies` (استفاده از کلاس‌ها به عنوان وابستگی)
+✅ **به جای استفاده از `dict` برای وابستگی‌ها، از کلاس استفاده کنیم تا خوانایی و مدیریت داده‌ها بهتر شود.**
+
+### 📌 مثال: تعریف کلاس برای مدیریت پارامترها
+```python
+class CommonQueryParams:
+    def __init__(self, q: str | None = None, skip: int = 0, limit: int = 100):
+        self.q = q
+        self.skip = skip
+        self.limit = limit
+
+@app.get("/items/")
+async def read_items(commons: CommonQueryParams = Depends()):
+    return {"q": commons.q, "skip": commons.skip, "limit": commons.limit}
+```
+✅ **مزیت:** ویرایشگرها و ابزارهای بررسی کد بهتر مقداردهی را تشخیص می‌دهند.
+
+---
+
+## 🔥 جمع‌بندی نهایی
+✅ **Dependencies with `yield`** → مدیریت منابعی که نیاز به بستن دارند.
+✅ **Global Dependencies** → اجرای وابستگی‌ها برای کل برنامه.
+✅ **Dependencies in Path Operation Decorators** → اجرای وابستگی بدون نیاز به مقدار بازگشتی.
+✅ **Sub-dependencies** → استفاده از وابستگی‌های تو در تو.
+✅ **Classes as Dependencies** → خوانایی و مدیریت بهتر داده‌ها.
+
+📌 **با این روش‌ها، توسعه‌ی FastAPI حرفه‌ای‌تر و ساده‌تر خواهد بود! 🚀**
+

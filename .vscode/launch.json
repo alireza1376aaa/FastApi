@@ -7,7 +7,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "part4:app",
+                "jwt:app",
                 "--reload"
             ],
             "console": "integratedTerminal"
